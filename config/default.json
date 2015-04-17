@@ -1,0 +1,14 @@
+{
+    "dbConfig": {
+      "host": "localhost",
+      "port": 5432,
+      "user":"user",
+      "password":"dev",
+      "dbName": "zoneville"
+    },
+    "WFS": {
+      "ignkey": "ignkey",
+      "server": "http://wfsserver/",
+      "url":"/geoportail/"
+    }
+}
