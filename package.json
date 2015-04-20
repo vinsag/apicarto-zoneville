@@ -23,7 +23,8 @@
   "lab":"5.5.1",
   "config":"1.12.0",
   "lodash":"3.6.0",
-  "string-template":"0.2.0"
+  "string-template":"0.2.0",
+  "q":"1.0.1"
   }
 
 } 
