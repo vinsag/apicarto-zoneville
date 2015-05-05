@@ -11,7 +11,7 @@ var plugin = {
     register: require('hapi-node-postgres'),
     options: {
         connectionString: 'postgres://'+config.dbConfig.user+ ':' + config.dbConfig.password +'@localhost/zoneville',
-        native: true
+        native: false
     },
 };
 
@@ -21,6 +21,7 @@ server.register(plugin, function (err) {
         console.error('Failed loading "hapi-node-postgres" plugin');
     }
 });
+/**
 server.register({
   register: require('good'),
   options: {
@@ -34,7 +35,7 @@ server.register({
     throw err;
   }
 });
-
+**/
 // Add the route
 server.route(require('./routes'));
 
