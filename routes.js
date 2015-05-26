@@ -1,4 +1,5 @@
 var ZFU = require('./handlers/zfu');
+var Zone = require('./handlers/zonage')
 var Quartier = require('./handlers/quartierprioritaire');
 var config = require('config')
 module.exports = [{
@@ -16,9 +17,7 @@ handler: ZFU.zfu
 },
 {method: 'GET',
 path: '/zoneville/api/beta/zrr/mapservice',
-handler: function (request, reply) {
-        reply.file('data/zrr.json').header('access-control-allow-origin', '*');
-      }
+handler: Zone.query
 },
 {
   method: 'GET',
@@ -35,5 +34,5 @@ handler: function (request, reply) {
         passThrough: false,
         xforward: false
       }}
-    }];
+}];
 
