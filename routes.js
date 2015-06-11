@@ -34,5 +34,11 @@ handler: Zone.query
         passThrough: false,
         xforward: false
       }}
-}];
+},
+{
+  method: 'GET',
+  path: '/zoneville/api/beta/qp/mapservice',
+  handler: Quartier.mapservice
+},
+];
 
