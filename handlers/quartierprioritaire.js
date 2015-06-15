@@ -16,6 +16,7 @@ function zone(point){
   return sql
 }
 
+
 function contains(point){
   sql = format("SELECT code_qp, nom_qp, commune_qp \
                 FROM politiqueville as p,\
@@ -24,6 +25,17 @@ function contains(point){
                 point.long, point.lat);
   return sql
 }
+
+function contains_geom(data){
+  sql = format("SELECT code_qp, nom_qp, commune_qp \
+                FROM politiqueville as p,\
+                  (SELECT ST_SetSRID(ST_GeomFromGeoJSON('%s'), 4326) geom) d\
+                WHERE ST_Intersects(p.geom, d.geom)", 
+                data);
+  console.log(sql);
+  return sql
+}
+
 function FeatureCollection(){
   this.type = 'FeatureCollection';
   this.features = new Array();
@@ -89,6 +101,23 @@ exports.mapservice = function (request, reply) {
       }
     }
     reply(featureCollection)
+      .header('access-control-allow-origin', '*')
+  }) 
+}
+
+exports.qp_post = function (request, reply) {
+  console.log(request.payload.geom);
+  sql = contains_geom(request.payload.geom.geometry);
+    request.pg.client.query(sql, function (err, result){
+
+    if (err){
+      throw err;
+    };
+    var featureCollection = new FeatureCollection();
+    if (result.rows == undefined){
+      return reply({status:'No Data'}).code(404).header('access-control-allow-origin', '*')
+    }
+    reply(result.rows)
       .header('access-control-allow-origin', '*')
   }) 
 }

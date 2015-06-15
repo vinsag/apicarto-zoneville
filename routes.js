@@ -11,6 +11,11 @@ module.exports = [{
   path: '/zoneville/api/beta/qp',
   handler: Quartier.qp
 },
+{
+  method: 'POST',
+  path: '/zoneville/api/v1/qp',
+  handler: Quartier.qp_post
+},
 {method: 'GET',
 path: '/zoneville/api/beta/zfu',
 handler: ZFU.zfu
