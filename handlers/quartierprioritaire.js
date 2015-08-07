@@ -2,137 +2,146 @@ var turf = require('turf');
 var format = require('pg-format');
 
 function mapservice() {
-    sql = format("SELECT ST_ASgeojson(qp.geom) as geom, code_qp, nom_qp, commune_qp FROM politiqueville as qp;");
-    return sql;
+  sql = format("SELECT ST_ASgeojson(qp.geom) as geom, code_qp, nom_qp, commune_qp FROM politiqueville as qp;");
+  return sql;
 }
 
 function zone(point) {
-    sql = format("SELECT ST_distance_Sphere(p.geom, d.geom) as distance, code_qp, nom_qp, commune_qp \
+  sql = format("SELECT ST_distance_Sphere(p.geom, d.geom) as distance, code_qp, nom_qp, commune_qp \
                 FROM politiqueville as p,\
                   (SELECT ST_SetSRID(ST_GeomFromText('POINT(%s %s)'), 4326) geom) d\
                 WHERE ST_contains(p.geom, d.geom) or ST_distance_sphere(p.geom, d.geom) < 1000 \
                 ORDER BY ST_distance_sphere(p.geom, d.geom)",
-        point.long, point.lat);
-    return sql
+    point.long, point.lat);
+  return sql
 }
 
 
 function contains(point) {
-    sql = format("SELECT code_qp, nom_qp, commune_qp \
+  sql = format("SELECT code_qp, nom_qp, commune_qp \
                 FROM politiqueville as p,\
                   (SELECT ST_SetSRID(ST_GeomFromText('POINT(%s %s)'), 4326) geom) d\
                 WHERE ST_contains(p.geom, d.geom)",
-        point.long, point.lat);
-    return sql
+    point.long, point.lat);
+  return sql
 }
 
 function contains_geom(data) {
-    sql = format("SELECT code_qp, nom_qp, commune_qp \
+  sql = format("SELECT code_qp, nom_qp, commune_qp \
                 FROM politiqueville as p,\
                   (SELECT ST_SetSRID(ST_GeomFromGeoJSON('%s'), 4326) geom) d\
                 WHERE ST_Intersects(p.geom, d.geom)",
-        data);
-    console.log(sql);
-    return sql
+    data);
+  console.log(sql);
+  return sql
 }
 
 function getid(code) {
-    sql = format("SELECT ST_ASgeojson(geom) as geom, code_qp, nom_qp, commune_qp \
+  sql = format("SELECT ST_ASgeojson(geom) as geom, code_qp, nom_qp, commune_qp \
                 FROM politiqueville\
                 WHERE code_qp = '%s'",
-        code);
-    return sql
+    code);
+  return sql
 }
 
 function FeatureCollection() {
-    this.type = 'FeatureCollection';
-    this.features = new Array();
+  this.type = 'FeatureCollection';
+  this.features = new Array();
 }
 
-exports.qp = function (request, reply) {
-    point = {long: request.query.x, lat: request.query.y};
-    sql = contains(point);
-    request.pg.client.query(sql, function (err, result) {
-        if (err) {
-            throw err;
-        }
-        ;
-        if (result.rows == undefined) {
-            return reply({status: 'No Data'}).code(404).header('access-control-allow-origin', '*')
-        }
-        /*for (i = 0; i < result.rows.length; i++){
-         ;
-         }*/
-        reply(result.rows)
-            .header('access-control-allow-origin', '*')
-    })
+exports.qp = function(request, reply) {
+  point = {
+    long: request.query.x,
+    lat: request.query.y
+  };
+  sql = contains(point);
+  request.pg.client.query(sql, function(err, result) {
+    if (err) {
+      throw err;
+    };
+    if (result.rows == undefined) {
+      return reply({
+        status: 'No Data'
+      }).code(404).header('access-control-allow-origin', '*')
+    }
+    /*for (i = 0; i < result.rows.length; i++){
+     ;
+     }*/
+    reply(result.rows)
+      .header('access-control-allow-origin', '*')
+  })
 }
 
-exports.qpprox = function (request, reply) {
-    point = {long: request.query.long, lat: request.query.lat};
-    sql = zone(point);
-    request.pg.client.query(sql, function (err, result) {
-        console.log(result);
-        if (err) {
-            throw err;
-        }
-        ;
-        if (result.rows == undefined) {
-            return reply({status: 'No Data'}).code(404).header('access-control-allow-origin', '*')
-        }
-        /*for (i = 0; i < result.rows.length; i++){
-         ;
-         }*/
-        reply(result.rows)
-            .header('access-control-allow-origin', '*')
-    })
+exports.qpprox = function(request, reply) {
+  point = {
+    long: request.query.long,
+    lat: request.query.lat
+  };
+  sql = zone(point);
+  request.pg.client.query(sql, function(err, result) {
+    console.log(result);
+    if (err) {
+      throw err;
+    };
+    if (result.rows == undefined) {
+      return reply({
+        status: 'No Data'
+      }).code(404).header('access-control-allow-origin', '*')
+    }
+    /*for (i = 0; i < result.rows.length; i++){
+     ;
+     }*/
+    reply(result.rows)
+      .header('access-control-allow-origin', '*')
+  })
 }
 
-exports.mapservice = function (request, reply) {
-    var code_qp = request.query.code;
-    if (typeof code_qp == 'undefined')
-        var sql = mapservice();
-    else
-        var sql = getid(code_qp);
-    request.pg.client.query(sql, function (err, result) {
+exports.mapservice = function(request, reply) {
+  var code_qp = request.query.code;
+  if (typeof code_qp == 'undefined')
+    var sql = mapservice();
+  else
+    var sql = getid(code_qp);
+  request.pg.client.query(sql, function(err, result) {
 
-        if (err) {
-            throw err;
+    if (err) {
+      throw err;
+    };
+    var featureCollection = new FeatureCollection();
+    if (result.rows == undefined) {
+      return reply({
+        status: 'No Data'
+      }).code(404).header('access-control-allow-origin', '*')
+    }
+    for (var i = 0; i < result.rows.length; i++) {
+      featureCollection.features[i] = {
+        type: "Feature",
+        geometry: JSON.parse(result.rows[i].geom),
+        properties: {
+          code_qp: result.rows[i].code_qp,
+          nom_qp: result.rows[i].nom_qp,
+          commune_qp: result.rows[i].commune_qp
         }
-        ;
-        var featureCollection = new FeatureCollection();
-        if (result.rows == undefined) {
-            return reply({status: 'No Data'}).code(404).header('access-control-allow-origin', '*')
-        }
-        for (var i = 0; i < result.rows.length; i++) {
-            featureCollection.features[i] = {
-                type: "Feature",
-                geometry: JSON.parse(result.rows[i].geom),
-                properties: {
-                    code_qp: result.rows[i].code_qp,
-                    nom_qp: result.rows[i].nom_qp,
-                    commune_qp: result.rows[i].commune_qp
-                }
-            }
-        }
-        reply(featureCollection)
-            .header('access-control-allow-origin', '*')
-    })
+      }
+    }
+    reply(featureCollection)
+      .header('access-control-allow-origin', '*')
+  })
 }
 
-exports.qp_post = function (request, reply) {
-    console.log(request.payload.geom);
-    sql = contains_geom(request.payload.geom.geometry);
-    request.pg.client.query(sql, function (err, result) {
+exports.qp_post = function(request, reply) {
+  sql = contains_geom(request.payload.geom.geometry);
+  request.pg.client.query(sql, function(err, result) {
 
-        if (err) {
-            throw err;
-        }
-        ;
-        if (result.rows == undefined) {
-            return reply({status: 'No Data'}).code(404).header('access-control-allow-origin', '*')
-        }
-        reply(result.rows)
-            .header('access-control-allow-origin', '*')
-    })
+    if (err) {
+      throw err;
+    };
+    if (result.rows == undefined) {
+      return reply({
+        status: 'No Data'
+      }).code(404).header('access-control-allow-origin', '*')
+    }
+    reply(result.rows)
+      .header('access-control-allow-origin', '*')
+  })
 }
